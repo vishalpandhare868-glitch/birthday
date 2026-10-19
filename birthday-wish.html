@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>A little something, for you</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,600&family=Great+Vibes&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12040b; --rose:#e0517a; --soft:#fff1ec; --blush:#ffd9d6;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html,body{height:100%;margin:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+  body{
+    background:radial-gradient(ellipse at 50% 30%, #fff6f2 0%, var(--blush) 55%, #f7b9c4 100%);
+    font-family:"Poppins",system-ui,sans-serif;color:var(--ink);
+  }
+  .tag{position:fixed;left:0;right:0;text-align:center;font-size:11px;letter-spacing:.28em;text-transform:uppercase;opacity:.7;pointer-events:none}
+  #top{top:calc(env(safe-area-inset-top,0px) + 28px);font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;text-transform:none;letter-spacing:.04em;font-size:18px;color:#a8284f}
+  #bottom{bottom:calc(env(safe-area-inset-bottom,0px) + 22px);transition:opacity .6s}
+  #halo{position:fixed;width:340px;height:340px;border-radius:50%;left:50%;top:30%;transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(255,92,140,.55),rgba(255,92,140,0) 68%);filter:blur(10px);pointer-events:none;animation:glow 2.4s ease-in-out infinite}
+  #heart{position:fixed;left:50%;top:30%;width:110px;height:110px;margin:-55px 0 0 -55px;pointer-events:none;
+    filter:drop-shadow(0 10px 22px rgba(224,60,110,.55));animation:beat 1.6s ease-in-out infinite;transition:top .9s cubic-bezier(.2,.8,.2,1)}
+  #heart.hit{animation:pop .7s ease-out}
+  body.done #heart,body.done #halo{top:22%}
+  @keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.08)}30%{transform:scale(.98)}45%{transform:scale(1.05)}}
+  @keyframes glow{0%,100%{opacity:.75}50%{opacity:1}}
+  @keyframes pop{0%{transform:scale(1)}30%{transform:scale(1.45)}100%{transform:scale(1)}}
+  canvas{position:fixed;inset:0;width:100%;height:100%}
+  .bar{position:fixed;left:0;right:0;height:0;background:#12040b;z-index:5;pointer-events:none;transition:height .9s cubic-bezier(.7,0,.3,1)}
+  .bar--top{top:0}.bar--bot{bottom:0}
+  body.curtain .bar{height:50.5vh}
+  body.tree #heart,body.tree #halo,body.tree #top,body.tree #bottom{display:none}
+  #bday{position:fixed;left:5.5%;bottom:10%;max-width:46%;pointer-events:none;opacity:0;transition:opacity 1.6s ease 3.4s;z-index:2}
+  #bday .sm{font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;font-size:clamp(14px,3.4vw,19px);color:#7a3a4e}
+  #bday .hb{font-family:"Great Vibes",cursive;font-size:clamp(52px,9vw,100px);line-height:1.05;color:#c21f55;text-shadow:0 4px 18px rgba(224,60,110,.25)}
+  #bday .nm{margin-top:4px;font-weight:500;font-size:12px;letter-spacing:.3em;text-transform:uppercase}
+  body.tree #bday{opacity:1}
+  @media (max-aspect-ratio:1/1){#bday{left:50%;transform:translateX(-50%);max-width:92%;text-align:center;bottom:5%}}
+  #again{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);border:1px solid rgba(18,4,11,.4);background:rgba(255,255,255,.5);
+    color:var(--ink);padding:8px 16px;border-radius:99px;font:500 11px "Poppins",sans-serif;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .6s 2.6s}
+  body.tree #again{opacity:1;pointer-events:auto}
+  
+</style>
+</head>
+<body>
+<div class="tag" id="top">a little something, for you</div>
+<div id="halo"></div>
+<svg id="heart" viewBox="0 0 100 90" aria-hidden="true">
+  <defs>
+    <radialGradient id="hg" cx="35%" cy="28%" r="80%">
+      <stop offset="0" stop-color="#ffd0dd"/><stop offset=".45" stop-color="#ff6f9a"/><stop offset="1" stop-color="#e0275f"/>
+    </radialGradient>
+  </defs>
+  <path d="M50 84 C12 55 2 34 14 18 C25 5 43 9 50 24 C57 9 75 5 86 18 C98 34 88 55 50 84Z" fill="url(#hg)"/>
+  <ellipse cx="32" cy="24" rx="9" ry="5" fill="#fff" opacity=".55" transform="rotate(-30 32 24)"/>
+</svg>
+<div id="bday"><div class="sm">and&hellip; make it count</div><div class="hb">Happy Birthday</div><div class="sm" id="msg"></div><div class="nm" id="name"></div></div>
+<canvas id="c"></canvas>
+<div class="bar bar--top"></div><div class="bar bar--bot"></div>
+<div class="tag" id="bottom">pull &amp; release</div>
+<button id="again">pull again</button>
+
+<script>
+// ✏️ PERSONALISE HERE (or open the page with ?to=Name)
+const NAME = new URLSearchParams(location.search).get('to') || 'My Dear Friend';
+const MESSAGE = 'here\u2019s to a year that blooms';
+
+document.getElementById('name').textContent = NAME;
+document.getElementById('msg').textContent = MESSAGE;
+
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const heartEl = document.getElementById('heart');
+let W, H, dpr, B;
+function resize(){
+  dpr = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  cv.width = W*dpr; cv.height = H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  B = {x: Math.max(70, W*0.17), y: H*0.8};
+}
+addEventListener('resize', resize); resize();
+
+const R = 46, MAXPULL = 80;
+let state = 'idle';          // idle | aiming | flying | done
+let pull = 0, start = null, arrow = null, parts = [];
+
+function target(){
+  const r = heartEl.getBoundingClientRect();
+  return {x: r.left + r.width/2, y: r.top + r.height/2};
+}
+function dir(){
+  const t = target(), dx = t.x - B.x, dy = t.y - B.y, d = Math.hypot(dx,dy) || 1;
+  return {x: dx/d, y: dy/d, a: Math.atan2(dy,dx)};
+}
+
+cv.addEventListener('pointerdown', e => {
+  if (state !== 'idle') return;
+  state = 'aiming'; start = {x:e.clientX, y:e.clientY}; pull = 0;
+  cv.setPointerCapture(e.pointerId);
+});
+cv.addEventListener('pointermove', e => {
+  if (state !== 'aiming') return;
+  const d = dir();
+  const p = -((e.clientX-start.x)*d.x + (e.clientY-start.y)*d.y);
+  pull = Math.max(0, Math.min(MAXPULL, p));
+});
+function release(){
+  if (state !== 'aiming') return;
+  if (pull < 18){ state = 'idle'; pull = 0; return; }
+  const d = dir();
+  arrow = {x: B.x - d.x*pull, y: B.y - d.y*pull, v: 500 + pull*9, d};
+  state = 'flying'; pull = 0;
+}
+cv.addEventListener('pointerup', release);
+cv.addEventListener('pointercancel', release);
+
+function burst(x, y){
+  const cols = ['#ff4f86','#ff9bb8','#ffd166','#ffffff','#e0275f'];
+  for (let i=0;i<70;i++){
+    const a = Math.random()*Math.PI*2, s = 120 + Math.random()*380;
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-120,life:1.4+Math.random(),t:0,
+      heart:Math.random()<.45,size:8+Math.random()*14,c:cols[i%cols.length],rot:Math.random()*6});
+  }
+}
+function floatHearts(){            // gentle rising hearts after the hit
+  if (state !== 'done' || Math.random() > .12) return;
+  parts.push({x:Math.random()*W,y:H+10,vx:(Math.random()-.5)*30,vy:-60-Math.random()*70,life:6,t:0,
+    heart:true,size:10+Math.random()*16,c:'rgba(255,79,134,.55)',rot:0,float:true});
+}
+
+function drawBow(d, pl){
+  const px = -d.y, py = d.x;                       // perpendicular
+  const t1 = {x:B.x+px*R-d.x*10, y:B.y+py*R-d.y*10};
+  const t2 = {x:B.x-px*R-d.x*10, y:B.y-py*R-d.y*10};
+  const n  = {x:B.x-d.x*pl, y:B.y-d.y*pl};
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#12040b'; ctx.lineWidth = 4.5;   // limbs
+  ctx.beginPath(); ctx.moveTo(t1.x,t1.y);
+  ctx.quadraticCurveTo(B.x+d.x*36, B.y+d.y*36, t2.x,t2.y); ctx.stroke();
+  ctx.lineWidth = 1.4; ctx.strokeStyle = '#7a3a4e';   // string
+  ctx.beginPath(); ctx.moveTo(t1.x,t1.y); ctx.lineTo(n.x,n.y); ctx.lineTo(t2.x,t2.y); ctx.stroke();
+  return n;
+}
+function drawArrow(x, y, d){
+  const L = 72, tx = x + d.x*L, ty = y + d.y*L, px = -d.y, py = d.x;
+  ctx.strokeStyle = '#12040b'; ctx.lineWidth = 2.4;
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(tx,ty); ctx.stroke();
+  ctx.fillStyle = '#e0275f';                               // heart-tip head
+  ctx.beginPath(); ctx.moveTo(tx+d.x*12,ty+d.y*12);
+  ctx.lineTo(tx+px*6,ty+py*6); ctx.lineTo(tx-px*6,ty-py*6); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#e0275f'; ctx.lineWidth = 2;          // feathers
+  for (let i=0;i<3;i++){
+    const fx = x + d.x*i*6, fy = y + d.y*i*6;
+    ctx.beginPath(); ctx.moveTo(fx,fy); ctx.lineTo(fx-d.x*8+px*6,fy-d.y*8+py*6);
+    ctx.moveTo(fx,fy); ctx.lineTo(fx-d.x*8-px*6,fy-d.y*8-py*6); ctx.stroke();
+  }
+  return {x:tx, y:ty};
+}
+
+
+function heartPath(x,y,s,rot){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(rot||0); ctx.beginPath();
+  ctx.moveTo(0,s*.9); ctx.bezierCurveTo(-s*1.5,-s*.1,-s*.7,-s*1.2,0,-s*.45);
+  ctx.bezierCurveTo(s*.7,-s*1.2,s*1.5,-s*.1,0,s*.9); ctx.fill(); ctx.restore();
+}
+const PAL=['#ff5c8a','#ff8fab','#ff7a59','#ffb347','#f7a8c4','#ff4f86','#ffd0a0'];
+let tree=null;
+function initTree(){
+  const land = W>H;
+  const k = Math.min(W*(land?.3:.42)/16, H*.6/29);
+  const cx = land ? W*.68 : W*.5, cy = H*.07 + 12*k + (land?10:20);
+  const top = cy-12*k, rng = 29*k, hs = [];
+  for (let i=0;i<300;i++){
+    const t = Math.random()*Math.PI*2, r = .2+.8*Math.sqrt(Math.random());
+    const hx = 16*Math.pow(Math.sin(t),3), hy = -(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
+    const x = cx+hx*k*r, y = cy+hy*k*r;
+    hs.push({x,y,s:(8+Math.random()*9)*Math.max(.7,k/14),c:PAL[i%PAL.length],rot:(Math.random()-.5)*.8,
+      d:1.3+((cy+17*k-y)/rng)*1.7+Math.random()*.4,ph:Math.random()*6});
+  }
+  tree = {t:0,cx,cy,k,hs,fall:0,base:H*.95};
+}
+function drawTree(dt){
+  tree.t += dt; const T = tree.t, {cx,cy,k,base} = tree;
+  const g = Math.min(1, T/1.5), e = 1-Math.pow(1-g,3);
+  const topY = cy+17*k*.55, sway = Math.sin(T*.6)*2;
+  ctx.strokeStyle = '#5a2433'; ctx.lineCap = 'round';
+  let px = cx, py = base;
+  for (let i=1;i<=30;i++){
+    const u = i/30*e, x = cx + 22*Math.sin(u*Math.PI)*(1-u) + sway*u, y = base-(base-topY)*u;
+    ctx.lineWidth = 15-9*u; ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(x,y); ctx.stroke(); px=x; py=y;
+  }
+  ctx.lineWidth = 4;
+  for (const b of [[-.5,-.2],[.5,-.2],[0,-.55],[-.25,-.4],[.3,-.45]]){
+    ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+b[0]*k*10*e, py+b[1]*k*10*e); ctx.stroke();
+  }
+  for (const h of tree.hs){
+    const u = (T-h.d)/.7; if (u<=0) continue;
+    const q = Math.min(1,u), sc = q<1 ? 1+2.7*Math.pow(q-1,3)+1.7*Math.pow(q-1,2) : 1;
+    ctx.fillStyle = h.c; ctx.globalAlpha = .92;
+    heartPath(h.x+Math.sin(T*1.2+h.ph)*1.5, h.y+Math.cos(T*.9+h.ph)*1.2, h.s*sc, h.rot+Math.sin(T+h.ph)*.06);
+  }
+  ctx.globalAlpha = 1;
+  if (T>3 && (tree.fall -= dt) < 0){
+    tree.fall = .12; const h = tree.hs[Math.floor(Math.random()*tree.hs.length)];
+    parts.push({x:h.x,y:h.y,vx:(Math.random()-.3)*30,vy:20+Math.random()*30,life:6,t:0,heart:true,size:h.s*.6,c:h.c,rot:0,float:true,fall:true});
+  }
+}
+
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(0.04, (now-last)/1000); last = now;
+  ctx.clearRect(0,0,W,H);
+  const d = dir();
+
+  if (state === 'tree'){ if (tree) drawTree(dt); }
+  else if (state === 'idle' || state === 'aiming'){
+    const n = drawBow(d, pull);
+    drawArrow(n.x, n.y, d);
+  } else {
+    drawBow(d, 0);
+  }
+
+  if (state === 'flying'){
+    arrow.x += arrow.d.x*arrow.v*dt; arrow.y += arrow.d.y*arrow.v*dt;
+    const tip = drawArrow(arrow.x, arrow.y, arrow.d), t = target();
+    if (Math.hypot(tip.x-t.x, tip.y-t.y) < 40){
+      state = 'hit'; arrow = null;
+      heartEl.classList.remove('hit'); void heartEl.offsetWidth; heartEl.classList.add('hit');
+      burst(t.x, t.y);
+      const B_ = document.body;
+      setTimeout(()=>B_.classList.add('curtain'), 900);
+      setTimeout(()=>{ parts=[]; initTree(); B_.classList.add('tree'); state='tree'; }, 1900);
+      setTimeout(()=>B_.classList.remove('curtain'), 2100);
+    }
+  }
+
+  parts = parts.filter(p => (p.t += dt) < p.life);
+  for (const p of parts){
+    if (!p.float){ p.vy += 420*dt; p.vx *= .99; } else if (p.fall){ p.vx = Math.sin(p.t*1.5+p.y*.01)*25; }
+    p.x += p.vx*dt; p.y += p.vy*dt;
+    ctx.globalAlpha = Math.max(0, 1 - p.t/p.life);
+    ctx.fillStyle = p.c;
+    if (p.heart){ heartPath(p.x, p.y, p.size*.6, p.t*(p.fall?.8:0)); }
+    else { ctx.fillRect(p.x, p.y, 5, 5); }
+  }
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+document.getElementById('again').addEventListener('click', () => {
+  document.body.classList.remove('tree','curtain'); state = 'idle'; parts = []; tree = null;
+});
+</script>
+</body>
+</html>
